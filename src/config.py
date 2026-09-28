@@ -13,6 +13,30 @@ if "asyncore" not in sys.modules:
 # Load local .env if available
 load_dotenv()
 
+# Set standard USER_AGENT for LangChain web loaders to eliminate missing user-agent warnings
+if not os.environ.get("USER_AGENT"):
+    os.environ["USER_AGENT"] = "SportPulseAI/1.0 (Sports Intelligence RAG; Mozilla/5.0 compatible)"
+
+# Suppress harmless HF Hub unauthenticated request notice when downloading public models
+import logging
+import warnings
+
+
+class _HFHubWarningFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "unauthenticated requests to the hf hub" not in record.getMessage().lower()
+
+
+_hf_filter = _HFHubWarningFilter()
+logging.getLogger("huggingface_hub").addFilter(_hf_filter)
+logging.getLogger().addFilter(_hf_filter)
+try:
+    import huggingface_hub.utils.logging as _hf_log
+    _hf_log.get_logger("huggingface_hub.utils._http").addFilter(_hf_filter)
+except Exception:
+    pass
+warnings.filterwarnings("ignore", message=".*unauthenticated requests to the HF Hub.*")
+
 # App Constants & Defaults
 APP_PAGE_TITLE = "SportPulse AI | Next-Gen Sports Intelligence"
 APP_PAGE_ICON = "⚡"

@@ -1,6 +1,6 @@
 import streamlit as st
 from src.config import APP_PAGE_ICON, APP_PAGE_TITLE
-from src.graph import build_sports_rag_graph
+from src.graph import build_sports_rag_graph, clean_sports_output
 from src.ingestion import ingest_sports_vault
 from src.styles import (
     apply_custom_styles,
@@ -104,7 +104,7 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar="⚡" if msg["role"] == "assistant" else "👤"):
         if "datasource" in msg:
             render_source_badge(msg["datasource"])
-        st.markdown(msg["content"])
+        st.markdown(clean_sports_output(msg["content"]))
         if "documents" in msg and msg["documents"]:
             render_playbook_chunk(msg["documents"])
 
@@ -148,7 +148,8 @@ if query_to_run:
                     result = graph.invoke(initial_state)
                     datasource = result.get("datasource", "wiki_search")
                     documents = result.get("documents", "")
-                    generation = result.get("generation", "No tactical breakdown generated.")
+                    raw_generation = result.get("generation", "No tactical breakdown generated.")
+                    generation = clean_sports_output(raw_generation)
 
                     # Render outputs
                     render_source_badge(datasource)

@@ -32,10 +32,58 @@ class GraphState(TypedDict):
     generation: str
 
 
+import re
+
 SYSTEM_ROUTER_PROMPT = """You are a world-class sports analytics and knowledge routing assistant.
 The vectorstore contains curated, high-fidelity sports archives, player stats, tactical breakdowns, tournament histories (Cricket World Cups, IPL, UEFA Champions League, FIFA World Cup, F1 Grand Prix, NBA Finals, Grand Slams, Olympic records, legends like Virat Kohli, Lionel Messi, Cristiano Ronaldo, MS Dhoni, LeBron James, Lewis Hamilton, Federer, Nadal, Djokovic).
 Use the vectorstore for deep sports player stats, tournament records, tactical breakdowns, and indexed sports topics.
 For general trivia, current broad queries, or non-indexed topics, route to wiki_search."""
+
+
+def clean_sports_output(text: str) -> str:
+    """Clean and reformat output to eliminate <br> tags, unpack cramped tables, and guarantee crisp bullet points."""
+    if not text:
+        return ""
+
+    # If the text contains a markdown table with <br> tags, unpack it into crisp bullet points
+    lines = text.strip().splitlines()
+    is_table_with_br = any("|" in line for line in lines) and any("<br" in line.lower() for line in lines)
+    if is_table_with_br:
+        cleaned_lines = []
+        for line in lines:
+            trimmed = line.strip()
+            # Skip divider lines like |---|---|
+            if not trimmed or re.match(r"^[\|\s\-:]+$", trimmed):
+                continue
+            cells = [c.strip() for c in trimmed.split("|") if c.strip()]
+            if len(cells) >= 2 and not cells[0].lower().startswith("category"):
+                header = cells[0].strip()
+                val = " | ".join(cells[1:])
+                cleaned_lines.append(f"\n### {header}")
+                items = re.split(r"<br\s*/?>", val, flags=re.IGNORECASE)
+                for it in items:
+                    it_clean = re.sub(r"^[•\-\*\s]+", "", it).strip()
+                    if it_clean:
+                        if ";" in it_clean and not any(k in it_clean.lower() for k in ["&amp;", "&lt;", "&gt;"]):
+                            sub_items = it_clean.split(";")
+                            for sit in sub_items:
+                                if sit.strip():
+                                    cleaned_lines.append(f"- {sit.strip()}")
+                        else:
+                            cleaned_lines.append(f"- {it_clean}")
+            elif not ("|" in line and any(k in line.lower() for k in ["highlights", "category", "details"])):
+                cleaned_lines.append(line)
+        text = "\n".join(cleaned_lines)
+
+    # Convert any lingering <br> followed by bullet into clean newline bullet
+    text = re.sub(r"<br\s*/?>\s*[•\-\*]\s*", "\n- ", text, flags=re.IGNORECASE)
+    # Convert remaining <br> tags into clean newlines
+    text = re.sub(r"<br\s*/?>", "\n\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"</br>", "", text, flags=re.IGNORECASE)
+    # Normalize unicode bullet • into markdown bullet -
+    text = re.sub(r"^[ \t]*[•]\s*", "- ", text, flags=re.MULTILINE)
+
+    return text.strip()
 
 
 def build_sports_rag_graph(groq_key: str, model_id: str, temp: float, vector_store):
@@ -112,14 +160,15 @@ def build_sports_rag_graph(groq_key: str, model_id: str, temp: float, vector_sto
         question = state["question"]
         documents = state["documents"]
 
-        augmented_prompt = f"""You are SportPulse AI — an elite, high-energy Sports Analyst and Tactical Strategist (comparable to top ESPN / Sky Sports / Cricbuzz lead analysts).
+        augmented_prompt = f"""You are SportPulse AI — an elite Sports Analyst and Tactical Strategist.
 
-Instructions:
-1. Answer the sports question accurately and clearly using ONLY the provided context.
-2. Structure your response with compelling highlights, key player records, match statistics, or tactical takeaways whenever present in the context.
-3. Be professional, engaging, and enthusiastic yet strictly factual.
-4. Do not invent outside facts or speculate beyond the provided context.
-5. If the context does not contain enough information, state: "The current sports context does not have sufficient data to answer this conclusively."
+CRITICAL FORMATTING & STYLE RULES:
+1. Present your breakdown in CRISP, CLEAN BULLET POINTS (`- `) grouped under topical section headers (e.g., `### 🏏 Debut & Career Overview`, `### 🏆 Major Trophies & Titles`, `### 📊 Statistical Milestones`, `### 🎯 Tactical Analysis`).
+2. MANDATORY: NEVER use `<br>` tags or HTML tags anywhere.
+3. DO NOT output dense markdown tables where cells have multiple items. Instead, use clear, readable bullet lists.
+4. Keep each bullet point punchy, concise, and highlight key records, numbers, and dates in **bold**.
+5. Answer strictly using ONLY the provided sports context. Do not invent outside facts.
+6. If the context does not contain enough data, state: "The current sports context does not have sufficient data to answer this conclusively."
 
 ### Sports Context / Playbook:
 {documents}
@@ -130,7 +179,8 @@ Instructions:
 ### Tactical Breakdown & Analysis:
 """
         response = llm.invoke(augmented_prompt)
-        return {"generation": response.content}
+        cleaned_response = clean_sports_output(response.content)
+        return {"generation": cleaned_response}
 
     # Conditional routing decision
     def decide_to_route(state: GraphState):
