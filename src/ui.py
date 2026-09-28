@@ -18,10 +18,10 @@ def render_sidebar() -> Dict[str, Any]:
         st.markdown(
             """
             <div style="text-align: center; padding: 10px 0 20px 0;">
-                <div style="font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 900; background: linear-gradient(90deg, #00FF87, #60EFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <div style="font-family: 'Outfit', sans-serif; font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; background: linear-gradient(135deg, #FFFFFF 0%, #93C5FD 50%, #818CF8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                     ⚡ SPORTPULSE
                 </div>
-                <div style="color: #64748B; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700;">
+                <div style="color: #64748B; font-size: 0.76rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;">
                     Tactical Intelligence v2.0
                 </div>
             </div>

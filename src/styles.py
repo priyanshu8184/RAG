@@ -1,21 +1,37 @@
 import streamlit as st
 
 CUSTOM_CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Orbitron:wght@700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-/* Global Typography & Background adjustments */
 html, body, [class*="css"] {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #F1F5F9;
 }
 
-/* Sports Header Styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(56, 189, 248, 0.5);
+}
+
+
 .sports-brand-container {
-    background: linear-gradient(135deg, rgba(14, 23, 42, 0.95) 0%, rgba(15, 30, 60, 0.9) 50%, rgba(9, 14, 26, 0.95) 100%);
-    border: 1px solid rgba(0, 229, 255, 0.25);
-    box-shadow: 0 10px 30px -10px rgba(0, 255, 135, 0.2), inset 0 0 20px rgba(0, 229, 255, 0.05);
-    border-radius: 16px;
-    padding: 24px 30px;
-    margin-bottom: 20px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(17, 24, 39, 0.98) 50%, rgba(11, 15, 25, 0.95) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 30px -8px rgba(56, 189, 248, 0.12);
+    backdrop-filter: blur(16px);
+    border-radius: 18px;
+    padding: 28px 34px;
+    margin-bottom: 22px;
     position: relative;
     overflow: hidden;
 }
@@ -25,179 +41,249 @@ html, body, [class*="css"] {
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #00FF87 0%, #60EFFF 50%, #FFB800 100%);
+    height: 2.5px;
+    background: linear-gradient(90deg, #38BDF8 0%, #818CF8 50%, #2DD4BF 100%);
 }
 .sports-badge-pill {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(0, 255, 135, 0.12);
-    color: #00FF87;
-    border: 1px solid rgba(0, 255, 135, 0.4);
-    padding: 4px 12px;
+    gap: 8px;
+    background: rgba(56, 189, 248, 0.08);
+    color: #38BDF8;
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    padding: 5px 14px;
     border-radius: 9999px;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(56, 189, 248, 0.1);
 }
 .sports-title {
-    font-family: 'Orbitron', 'Rajdhani', sans-serif;
-    font-size: 2.6rem;
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    background: linear-gradient(90deg, #FFFFFF 0%, #60EFFF 45%, #00FF87 100%);
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 30%, #93C5FD 70%, #818CF8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin: 0 0 6px 0;
+    margin: 0 0 8px 0;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
 }
 .sports-tagline {
     color: #94A3B8;
-    font-size: 1.05rem;
-    font-weight: 500;
+    font-size: 1.02rem;
+    font-weight: 400;
+    line-height: 1.6;
     margin: 0;
+    max-width: 900px;
 }
 
-/* Live Sports Ticker Bar */
+
 .sports-ticker-bar {
-    background: rgba(15, 23, 42, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    padding: 8px 16px;
+    background: rgba(17, 24, 39, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 12px;
+    padding: 10px 18px;
     margin-bottom: 24px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     font-size: 0.88rem;
     color: #CBD5E1;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     overflow: hidden;
 }
 .ticker-pulse {
-    width: 10px;
-    height: 10px;
-    background-color: #EF4444;
+    width: 9px;
+    height: 9px;
+    background-color: #38BDF8;
     border-radius: 50%;
-    box-shadow: 0 0 10px #EF4444;
-    animation: pulseAnimation 1.5s infinite;
+    box-shadow: 0 0 12px #38BDF8, 0 0 4px #818CF8;
+    animation: coolPulse 2s ease-in-out infinite;
     flex-shrink: 0;
 }
-@keyframes pulseAnimation {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(1.2); }
-    100% { opacity: 1; transform: scale(1); }
+@keyframes coolPulse {
+    0% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px #38BDF8; }
+    50% { opacity: 0.45; transform: scale(1.3); box-shadow: 0 0 16px #38BDF8; }
+    100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px #38BDF8; }
 }
 .ticker-highlight {
-    color: #00FF87;
+    color: #38BDF8;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1rem;
+    letter-spacing: 0.08em;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.86rem;
     flex-shrink: 0;
 }
 .ticker-content {
     white-space: nowrap;
     color: #94A3B8;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
 }
 
-/* HUD Scoreboard Metric Cards */
+/* Glassmorphic Metric Cards */
 .hud-card {
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-left: 4px solid #60EFFF;
-    border-radius: 12px;
-    padding: 14px 18px;
+    background: rgba(17, 24, 39, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-left: 3.5px solid #38BDF8;
+    border-radius: 14px;
+    padding: 16px 20px;
     margin-bottom: 16px;
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .hud-card:hover {
-    border-color: #00FF87;
+    border-color: rgba(56, 189, 248, 0.35);
     transform: translateY(-2px);
+    box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.45), 0 0 20px -5px rgba(56, 189, 248, 0.15);
 }
 .hud-label {
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.09em;
     color: #64748B;
     font-weight: 700;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 .hud-value {
-    font-size: 1.05rem;
-    font-weight: 700;
+    font-size: 1.02rem;
+    font-weight: 600;
     color: #F8FAFC;
     display: flex;
     align-items: center;
     gap: 8px;
+    letter-spacing: -0.01em;
 }
 
-/* Source Badges */
+/* Sophisticated Cool Source Badges */
 .badge-vector-sports {
-    background: linear-gradient(90deg, rgba(0, 255, 135, 0.15), rgba(0, 229, 255, 0.15));
-    color: #00FF87;
-    border: 1px solid rgba(0, 255, 135, 0.5);
-    padding: 6px 14px;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(99, 102, 241, 0.12));
+    color: #38BDF8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 5px 14px;
     border-radius: 9999px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     margin-bottom: 12px;
-    box-shadow: 0 0 15px rgba(0, 255, 135, 0.15);
+    box-shadow: 0 2px 10px rgba(56, 189, 248, 0.12);
 }
 .badge-wiki-sports {
-    background: linear-gradient(90deg, rgba(255, 184, 0, 0.15), rgba(255, 107, 0, 0.15));
-    color: #FFB800;
-    border: 1px solid rgba(255, 184, 0, 0.5);
-    padding: 6px 14px;
+    background: linear-gradient(135deg, rgba(129, 140, 248, 0.12), rgba(168, 85, 247, 0.12));
+    color: #A5B4FC;
+    border: 1px solid rgba(129, 140, 248, 0.35);
+    padding: 5px 14px;
     border-radius: 9999px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     margin-bottom: 12px;
-    box-shadow: 0 0 15px rgba(255, 184, 0, 0.15);
+    box-shadow: 0 2px 10px rgba(129, 140, 248, 0.12);
 }
 
-/* Playbook Tactical Chunk */
+/* Tactical Playbook Inspector */
 .playbook-chunk {
-    background: rgba(10, 16, 30, 0.85);
-    border: 1px solid rgba(96, 239, 255, 0.2);
-    border-left: 3px solid #00FF87;
-    padding: 12px 16px;
+    background: rgba(11, 15, 25, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.18);
+    border-left: 3px solid #38BDF8;
+    padding: 14px 18px;
     margin: 8px 0;
-    border-radius: 0 8px 8px 0;
-    font-size: 0.88rem;
-    line-height: 1.5;
+    border-radius: 0 10px 10px 0;
+    font-size: 0.87rem;
+    line-height: 1.6;
     color: #CBD5E1;
+    font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* Category Header Banner */
+/* Category Section Header */
 .section-header {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1.25rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #F1F5F9;
-    margin: 18px 0 10px 0;
+    letter-spacing: 0.02em;
+    color: #F8FAFC;
+    margin: 22px 0 12px 0;
     display: flex;
     align-items: center;
+    gap: 10px;
+}
+
+/* Streamlit Button & Tab Enhancements */
+div[data-testid="stButton"] > button {
+    background: rgba(17, 24, 39, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    color: #E2E8F0;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.86rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+div[data-testid="stButton"] > button:hover {
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.45);
+    color: #38BDF8;
+    box-shadow: 0 4px 14px -2px rgba(56, 189, 248, 0.2);
+    transform: translateY(-1px);
+}
+
+/* Streamlit Tabs Styling */
+div[data-baseweb="tab-list"] {
     gap: 8px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+div[data-baseweb="tab"] {
+    background: transparent !important;
+    border: none !important;
+    color: #94A3B8 !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    padding: 8px 16px !important;
+    transition: color 0.2s ease !important;
+}
+div[data-baseweb="tab"]:hover {
+    color: #38BDF8 !important;
+}
+div[data-baseweb="tab"][aria-selected="true"] {
+    color: #38BDF8 !important;
+    border-bottom: 2px solid #38BDF8 !important;
+}
+
+/* Chat Message Styling */
+div[data-testid="stChatMessage"] {
+    background: rgba(17, 24, 39, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    backdrop-filter: blur(8px);
+}
+
+/* Expander Styling */
+div[data-testid="stExpander"] {
+    background: rgba(17, 24, 39, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 12px;
+    margin-bottom: 12px;
 }
 """
 
+
 def apply_custom_styles():
-    """Inject custom Athletic Cyber-Sports CSS theme."""
+    """Inject custom Classy Cool Sports Intelligence CSS theme."""
     st.markdown(f"<style>{CUSTOM_CSS}</style>", unsafe_allow_html=True)
 
 
@@ -236,7 +322,7 @@ def render_ticker_bar():
 
 
 def render_hud_cards(groq_api_key: str, model_name: str, use_astra: bool, active_vector_store, table_name: str, indexed_chunk_count: int):
-    """Render the HUD scoreboard metric cards."""
+    """Render the HUD scoreboard metric cards with classy cool colors."""
     col_stat1, col_stat2, col_stat3 = st.columns(3)
     
     with col_stat1:
@@ -244,9 +330,9 @@ def render_hud_cards(groq_api_key: str, model_name: str, use_astra: bool, active
             model_short = model_name.split("/")[-1].upper()
             st.markdown(
                 f"""
-                <div class="hud-card" style="border-left-color: #00FF87;">
+                <div class="hud-card" style="border-left-color: #38BDF8;">
                     <div class="hud-label">⚡ LLM Engine</div>
-                    <div class="hud-value">🟢 Groq ({model_short})</div>
+                    <div class="hud-value"><span style="color: #38BDF8;">●</span> Groq ({model_short})</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -254,9 +340,9 @@ def render_hud_cards(groq_api_key: str, model_name: str, use_astra: bool, active
         else:
             st.markdown(
                 """
-                <div class="hud-card" style="border-left-color: #EF4444;">
+                <div class="hud-card" style="border-left-color: #F43F5E;">
                     <div class="hud-label">⚡ LLM Engine</div>
-                    <div class="hud-value">🔴 Groq API Key Required</div>
+                    <div class="hud-value"><span style="color: #F43F5E;">●</span> Groq API Key Required</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -267,9 +353,9 @@ def render_hud_cards(groq_api_key: str, model_name: str, use_astra: bool, active
             if active_vector_store:
                 st.markdown(
                     f"""
-                    <div class="hud-card" style="border-left-color: #60EFFF;">
+                    <div class="hud-card" style="border-left-color: #2DD4BF;">
                         <div class="hud-label">🏟️ Sports Vector Vault</div>
-                        <div class="hud-value">🟢 Astra DB Connected (`{table_name}`)</div>
+                        <div class="hud-value"><span style="color: #2DD4BF;">●</span> Astra DB Connected (`{table_name}`)</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -277,9 +363,9 @@ def render_hud_cards(groq_api_key: str, model_name: str, use_astra: bool, active
             else:
                 st.markdown(
                     """
-                    <div class="hud-card" style="border-left-color: #EF4444;">
+                    <div class="hud-card" style="border-left-color: #F43F5E;">
                         <div class="hud-label">🏟️ Sports Vector Vault</div>
-                        <div class="hud-value">🔴 Astra DB Auth / Token Required</div>
+                        <div class="hud-value"><span style="color: #F43F5E;">●</span> Astra DB Auth / Token Required</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -288,9 +374,9 @@ def render_hud_cards(groq_api_key: str, model_name: str, use_astra: bool, active
             chunk_info = f"({indexed_chunk_count} Chunks Indexed)" if indexed_chunk_count > 0 else "(Ready for Ingestion)"
             st.markdown(
                 f"""
-                <div class="hud-card" style="border-left-color: #00FF87;">
+                <div class="hud-card" style="border-left-color: #38BDF8;">
                     <div class="hud-label">⚡ Local Sports Vault</div>
-                    <div class="hud-value">🟢 In-Memory Store {chunk_info}</div>
+                    <div class="hud-value"><span style="color: #38BDF8;">●</span> In-Memory Store {chunk_info}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -299,9 +385,9 @@ def render_hud_cards(groq_api_key: str, model_name: str, use_astra: bool, active
     with col_stat3:
         st.markdown(
             """
-            <div class="hud-card" style="border-left-color: #A855F7;">
+            <div class="hud-card" style="border-left-color: #818CF8;">
                 <div class="hud-label">🎯 LangGraph Routing</div>
-                <div class="hud-value">🟣 Multi-Source Adaptive Graph</div>
+                <div class="hud-value"><span style="color: #818CF8;">●</span> Multi-Source Adaptive Graph</div>
             </div>
             """,
             unsafe_allow_html=True,
