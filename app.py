@@ -1,7 +1,7 @@
 import streamlit as st
 from src.config import APP_PAGE_ICON, APP_PAGE_TITLE
 from src.graph import build_sports_rag_graph, clean_sports_output
-from src.ingestion import ingest_sports_vault
+from src.ingestion import ingest_sports_vault, is_sports_url
 from src.styles import (
     apply_custom_styles,
     render_hero_header,
@@ -58,12 +58,25 @@ else:
 
 # 6. Handle Ingestion Trigger
 if cfg["index_button"]:
-    if cfg["use_astra"] and (not cfg["astra_token"] or not cfg["astra_db_id"]):
+    urls = [u.strip() for u in cfg["custom_urls_input"].splitlines() if u.strip()]
+    invalid_urls = []
+    for u in urls:
+        ok, reason = is_sports_url(u)
+        if not ok:
+            invalid_urls.append((u, reason))
+
+    if invalid_urls:
+        bullets = "\n".join([f"- `{u}` — *{r}*" for u, r in invalid_urls])
+        st.error(
+            f"⚠️ **Sports Criteria Restriction**: Please enter URLs related to sports only!\n\n"
+            f"The following non-sports URL(s) were rejected:\n{bullets}\n\n"
+            f"Please provide only sports-related URLs (e.g. cricket, football, basketball, tennis, Formula 1, Olympic records, leagues, or athlete archives)."
+        )
+    elif cfg["use_astra"] and (not cfg["astra_token"] or not cfg["astra_db_id"]):
         st.error("Please provide your Astra DB Token and Database ID in the sidebar, or switch to 'Local In-Memory Store'.")
     else:
         with st.status("⚡ Indexing Sports Intelligence into Vector Vault...", expanded=True) as status:
             try:
-                urls = cfg["custom_urls_input"].splitlines()
                 count = ingest_sports_vault(
                     urls=urls,
                     use_astra=cfg["use_astra"],

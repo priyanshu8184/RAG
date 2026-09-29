@@ -9,6 +9,7 @@ from src.config import (
     SUPPORTED_GROQ_MODELS,
     get_available_groq_models,
 )
+from src.ingestion import is_sports_url
 from src.vectorstore import get_astra_vector_store
 
 
@@ -103,7 +104,22 @@ def render_sidebar() -> Dict[str, Any]:
                 "Sports URLs to index (one per line)",
                 value="\n".join(DEFAULT_SPORTS_URLS),
                 height=140,
+                help="Only sports-related encyclopedias, leagues, athlete profiles, and archives are allowed.",
             )
+
+            # Live criteria verification notification
+            entered_urls = [u.strip() for u in custom_urls_input.splitlines() if u.strip()]
+            invalid_sports_urls = []
+            for u in entered_urls:
+                ok, reason = is_sports_url(u)
+                if not ok:
+                    invalid_sports_urls.append(u)
+
+            if invalid_sports_urls:
+                st.warning(
+                    "⚠️ **Sports Criteria Alert**: Please enter URLs related to sports only!\n\n"
+                    + "\n".join([f"- `{u}`" for u in invalid_sports_urls])
+                )
 
             index_button = st.button("⚡ Ingest Sports Vault into Vector DB", use_container_width=True)
 

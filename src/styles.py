@@ -194,6 +194,21 @@ html, body, [class*="css"] {
     margin-bottom: 12px;
     box-shadow: 0 2px 10px rgba(129, 140, 248, 0.12);
 }
+.badge-reject-sports {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.12), rgba(239, 68, 68, 0.15));
+    color: #FB7185;
+    border: 1px solid rgba(244, 63, 94, 0.35);
+    padding: 5px 14px;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(244, 63, 94, 0.12);
+}
 
 /* Tactical Playbook Inspector */
 .playbook-chunk {
@@ -398,6 +413,8 @@ def render_source_badge(datasource: str):
     """Render the routing badge indicator."""
     if datasource == "vectorstore":
         st.markdown('<span class="badge-vector-sports">🏟️ Routed to: Sports Vector Vault</span>', unsafe_allow_html=True)
+    elif datasource == "non_sports":
+        st.markdown('<span class="badge-reject-sports">🛑 Policy Check: Non-Sports Query Filtered</span>', unsafe_allow_html=True)
     else:
         st.markdown('<span class="badge-wiki-sports">🌐 Routed to: Global Sports Wiki / Web</span>', unsafe_allow_html=True)
 

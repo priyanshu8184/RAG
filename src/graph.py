@@ -15,11 +15,11 @@ SPORTS_KEYWORDS = [
 
 
 class RouteQuery(BaseModel):
-    """Route a sports query to the most relevant datasource."""
+    """Route a query to vectorstore, wiki_search for sports topics, or non_sports if unrelated."""
 
-    datasource: Literal["vectorstore", "wiki_search"] = Field(
+    datasource: Literal["vectorstore", "wiki_search", "non_sports"] = Field(
         ...,
-        description="Given a user question choose to route it to wikipedia or a specialized sports vectorstore.",
+        description="Choose 'vectorstore' for indexed sports stats/records, 'wiki_search' for other sports/athletes/competitions, or 'non_sports' if the query is NOT related to sports, games, athletics, or sporting tournaments/athletes.",
     )
 
 
@@ -34,10 +34,14 @@ class GraphState(TypedDict):
 
 import re
 
-SYSTEM_ROUTER_PROMPT = """You are a world-class sports analytics and knowledge routing assistant.
-The vectorstore contains curated, high-fidelity sports archives, player stats, tactical breakdowns, tournament histories (Cricket World Cups, IPL, UEFA Champions League, FIFA World Cup, F1 Grand Prix, NBA Finals, Grand Slams, Olympic records, legends like Virat Kohli, Lionel Messi, Cristiano Ronaldo, MS Dhoni, LeBron James, Lewis Hamilton, Federer, Nadal, Djokovic).
-Use the vectorstore for deep sports player stats, tournament records, tactical breakdowns, and indexed sports topics.
-For general trivia, current broad queries, or non-indexed topics, route to wiki_search."""
+SYSTEM_ROUTER_PROMPT = """You are a strict sports classifier and tactical knowledge router.
+Your job is to determine whether the user question is related to SPORTS, athletic games, tournaments, athletes, leagues, rules, scores, or tactics.
+
+CRITICAL CLASSIFICATION RULES:
+1. STRICT NON-SPORTS FILTER: If the question is NOT related to sports (e.g., programming, code, cooking, recipes, politics, general history, geography, science, math, movies, music, personal life unrelated to sports, or general banter), you MUST select 'non_sports'.
+2. SPORTS QUERIES: If the question IS related to sports:
+   - Select 'vectorstore' if it asks about deeply indexed sports legends (Kohli, Rohit, Messi, Ronaldo, Dhoni, Sachin, Hamilton, Verstappen, LeBron, Jordan, Federer, Nadal, Djokovic) or major tournaments (Cricket World Cups, IPL, UEFA Champions League, FIFA World Cup, F1 Grand Prix, NBA Finals, Grand Slams, Olympic records).
+   - Select 'wiki_search' for any other sports topic, unindexed athlete, tournament, sports rules, or sports trivia."""
 
 
 def clean_sports_output(text: str) -> str:
@@ -127,11 +131,14 @@ def build_sports_rag_graph(groq_key: str, model_id: str, temp: float, vector_sto
             else:
                 datasource = str(route_result)
         except Exception:
-            # Fallback sports heuristic
-            if any(k in question.lower() for k in SPORTS_KEYWORDS):
+            # Fallback sports heuristic with strict non-sports rejection
+            q_lower = question.lower()
+            if any(k in q_lower for k in SPORTS_KEYWORDS):
                 datasource = "vectorstore"
-            else:
+            elif any(sk in q_lower for sk in ["who won", "score", "match", "championship", "tournament", "player", "athlete", "cup", "league", "stadium", "medal"]):
                 datasource = "wiki_search"
+            else:
+                datasource = "non_sports"
         return {"datasource": datasource}
 
     def retrieve_vectorstore_node(state: GraphState):
@@ -156,19 +163,35 @@ def build_sports_rag_graph(groq_key: str, model_id: str, temp: float, vector_sto
             wiki_result = f"Wikipedia sports search error: {str(e)}"
         return {"documents": str(wiki_result)}
 
+    def reject_non_sports_node(state: GraphState):
+        """Strictly reject queries unrelated to sports."""
+        rejection_msg = (
+            "⚡ **SportPulse AI Policy Notice**\n\n"
+            "I am designed and specialized to answer questions **strictly related to sports only**.\n\n"
+            "Please ask questions related to sports, athletic competitions, tournaments, or athletes "
+            "(such as cricket, football, tennis, Formula 1, basketball, tournament records, player statistics, "
+            "match tactics, or sporting history)."
+        )
+        return {
+            "generation": rejection_msg,
+            "documents": "",
+            "datasource": "non_sports",
+        }
+
     def generate_node(state: GraphState):
         question = state["question"]
         documents = state["documents"]
 
         augmented_prompt = f"""You are SportPulse AI — an elite Sports Analyst and Tactical Strategist.
 
-CRITICAL FORMATTING & STYLE RULES:
-1. Present your breakdown in CRISP, CLEAN BULLET POINTS (`- `) grouped under topical section headers (e.g., `### 🏏 Debut & Career Overview`, `### 🏆 Major Trophies & Titles`, `### 📊 Statistical Milestones`, `### 🎯 Tactical Analysis`).
-2. MANDATORY: NEVER use `<br>` tags or HTML tags anywhere.
-3. DO NOT output dense markdown tables where cells have multiple items. Instead, use clear, readable bullet lists.
-4. Keep each bullet point punchy, concise, and highlight key records, numbers, and dates in **bold**.
-5. Answer strictly using ONLY the provided sports context. Do not invent outside facts.
-6. If the context does not contain enough data, state: "The current sports context does not have sufficient data to answer this conclusively."
+CRITICAL POLICY & STYLE MANDATES:
+1. SPORTS-ONLY CRITERIA: You are strictly forbidden from answering questions unrelated to sports. If the question or context is not about sports, athletes, tournaments, or games, decline to answer and state: "I am programmed to answer questions related to sports only. Please ask a sports-related question."
+2. Present your breakdown in CRISP, CLEAN BULLET POINTS (`- `) grouped under topical section headers (e.g., `### 🏏 Debut & Career Overview`, `### 🏆 Major Trophies & Titles`, `### 📊 Statistical Milestones`, `### 🎯 Tactical Analysis`).
+3. MANDATORY: NEVER use `<br>` tags or HTML tags anywhere.
+4. DO NOT output dense markdown tables where cells have multiple items. Instead, use clear, readable bullet lists.
+5. Keep each bullet point punchy, concise, and highlight key records, numbers, and dates in **bold**.
+6. Answer strictly using ONLY the provided sports context. Do not invent outside facts.
+7. If the context does not contain enough data, state: "The current sports context does not have sufficient data to answer this conclusively."
 
 ### Sports Context / Playbook:
 {documents}
@@ -191,6 +214,7 @@ CRITICAL FORMATTING & STYLE RULES:
     workflow.add_node("router", route_question_node)
     workflow.add_node("vectorstore", retrieve_vectorstore_node)
     workflow.add_node("wiki_search", wiki_search_node)
+    workflow.add_node("reject_non_sports", reject_non_sports_node)
     workflow.add_node("generate", generate_node)
 
     workflow.set_entry_point("router")
@@ -200,10 +224,12 @@ CRITICAL FORMATTING & STYLE RULES:
         {
             "vectorstore": "vectorstore",
             "wiki_search": "wiki_search",
+            "non_sports": "reject_non_sports",
         },
     )
     workflow.add_edge("vectorstore", "generate")
     workflow.add_edge("wiki_search", "generate")
+    workflow.add_edge("reject_non_sports", END)
     workflow.add_edge("generate", END)
 
     return workflow.compile()
