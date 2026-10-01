@@ -23,23 +23,26 @@ SPORTS_KEYWORDS = {
     "sport", "sports", "cricket", "cricketer", "football", "footballer", "soccer",
     "basketball", "tennis", "formula", "f1", "grand_prix", "racing", "motorsport",
     "baseball", "hockey", "rugby", "golf", "golfer", "volleyball", "badminton",
-    "athletics", "athlete", "olympic", "olympics", "paralympic", "swimming", "swimmer",
+    "athletics", "athlete", "sportsperson", "olympic", "olympics", "paralympic", "swimming", "swimmer",
     "boxing", "boxer", "wrestling", "wrestler", "nba", "nfl", "fifa", "uefa", "icc",
     "ipl", "atp", "wta", "pga", "mlb", "nhl", "kohli", "messi", "ronaldo", "dhoni",
     "sachin", "tendulkar", "hamilton", "verstappen", "lebron", "jordan", "federer",
-    "nadal", "djokovic", "rohit_sharma", "maradona", "pele", "bolt", "phelps",
+    "nadal", "djokovic", "rohit", "rohit_sharma", "maradona", "pele", "bolt", "phelps",
     "world_cup", "champions_league", "super_bowl", "wimbledon", "tournament",
     "championship", "stadium", "striker", "batsman", "bowler", "wicket", "touchdown",
-    "quarterback", "grand_slam", "ballon_d_or", "driver", "pitcher", "goalkeeper"
+    "quarterback", "grand_slam", "ballon_d_or", "driver", "pitcher", "goalkeeper",
+    "bumrah", "hardik", "jadeja", "sehwag", "ganguly", "dravid", "alcaraz", "sinner",
+    "serena", "curry", "kobe", "shaq", "sindhu", "neeraj", "chopra"
 }
 
 SPORTS_CONTENT_ANCHORS = {
-    "sport", "sports", "athlete", "athletic", "tournament", "championship",
+    "sport", "sports", "athlete", "athletic", "sportsperson", "tournament", "championship",
     "league", "match", "game", "player", "coach", "manager", "stadium",
     "arena", "referee", "umpire", "score", "goal", "wicket", "touchdown",
     "basket", "trophy", "medal", "olympic", "fifa", "uefa", "nba", "nfl",
     "ipl", "icc", "cricket", "football", "soccer", "basketball", "tennis",
-    "golf", "baseball", "hockey", "f1", "racing", "grand slam", "world cup"
+    "golf", "baseball", "hockey", "f1", "racing", "grand slam", "world cup",
+    "batsman", "bowler", "innings", "century", "striker", "midfielder", "racer"
 }
 
 

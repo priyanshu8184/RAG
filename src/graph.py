@@ -1,25 +1,36 @@
 from typing import Literal, TypedDict
+import re
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
 from src.tools import get_wikipedia_tool
 
-# Fallback sports keywords heuristic
+# Fallback sports keywords heuristic (expanded to include sports persons, positions, terms)
 SPORTS_KEYWORDS = [
-    "cricket", "football", "soccer", "messi", "ronaldo", "kohli", "dhoni",
-    "f1", "formula 1", "hamilton", "verstappen", "nba", "lebron", "jordan",
-    "tennis", "federer", "nadal", "djokovic", "world cup", "champions league",
-    "ipl", "olympics", "stats", "goals", "runs", "wickets", "grand slam",
+    "cricket", "cricketer", "football", "footballer", "soccer", "messi", "ronaldo", "kohli", "dhoni",
+    "sachin", "tendulkar", "rohit", "sharma", "bumrah", "hardik", "jadeja", "sehwag", "ganguly", "dravid",
+    "f1", "formula 1", "hamilton", "verstappen", "senna", "schumacher", "leclerc", "norris", "alonso",
+    "nba", "lebron", "jordan", "kobe", "curry", "shaq", "giannis", "durant", "basketball",
+    "tennis", "federer", "nadal", "djokovic", "alcaraz", "sinner", "serena", "williams", "sharapova",
+    "world cup", "champions league", "premier league", "la liga", "ipl", "olympics", "olympic",
+    "stats", "goals", "runs", "wickets", "grand slam", "ballon d'or", "century", "batting", "bowling",
+    "striker", "midfielder", "defender", "goalkeeper", "quarterback", "touchdown", "athlete", "sportsperson",
+    "player", "coach", "tournament", "championship", "badminton", "sindhu", "saina", "neeraj", "chopra"
 ]
 
 
 class RouteQuery(BaseModel):
-    """Route a query to vectorstore, wiki_search for sports topics, or non_sports if unrelated."""
+    """Route a query to vectorstore, wiki_search for sports/sportspeople topics, or non_sports if unrelated."""
 
     datasource: Literal["vectorstore", "wiki_search", "non_sports"] = Field(
         ...,
-        description="Choose 'vectorstore' for indexed sports stats/records, 'wiki_search' for other sports/athletes/competitions, or 'non_sports' if the query is NOT related to sports, games, athletics, or sporting tournaments/athletes.",
+        description=(
+            "Choose 'vectorstore' for indexed sports vault queries, "
+            "'wiki_search' for any sports person / athlete (e.g. Kohli, Messi, Ronaldo, LeBron, Federer, etc.), "
+            "competitions, sports trivia, match records, or sports rules, "
+            "or 'non_sports' ONLY if the query is completely unrelated to sports, athletes, games, or tournaments."
+        ),
     )
 
 
@@ -32,16 +43,23 @@ class GraphState(TypedDict):
     generation: str
 
 
-import re
-
-SYSTEM_ROUTER_PROMPT = """You are a strict sports classifier and tactical knowledge router.
-Your job is to determine whether the user question is related to SPORTS, athletic games, tournaments, athletes, leagues, rules, scores, or tactics.
+SYSTEM_ROUTER_PROMPT = """You are a strict sports classifier and tactical knowledge router for SportPulse AI.
+Your primary role is to identify queries related to SPORTS, ATHLETES, SPORTSPERSONS, LEAGUES, TOURNAMENTS, MATCHES, RULES, and STATS.
 
 CRITICAL CLASSIFICATION RULES:
-1. STRICT NON-SPORTS FILTER: If the question is NOT related to sports (e.g., programming, code, cooking, recipes, politics, general history, geography, science, math, movies, music, personal life unrelated to sports, or general banter), you MUST select 'non_sports'.
-2. SPORTS QUERIES: If the question IS related to sports:
-   - Select 'vectorstore' if it asks about deeply indexed sports legends (Kohli, Rohit, Messi, Ronaldo, Dhoni, Sachin, Hamilton, Verstappen, LeBron, Jordan, Federer, Nadal, Djokovic) or major tournaments (Cricket World Cups, IPL, UEFA Champions League, FIFA World Cup, F1 Grand Prix, NBA Finals, Grand Slams, Olympic records).
-   - Select 'wiki_search' for any other sports topic, unindexed athlete, tournament, sports rules, or sports trivia."""
+1. STRICT SPORTS & SPORTSPERSON INCLUSION:
+   Any question about:
+   - Any athlete, player, sportsperson, cricketer, footballer, racer, tennis player, basketballer, Olympic champion, coach, manager, or sporting icon (e.g., Virat Kohli, Rohit Sharma, MS Dhoni, Sachin Tendulkar, Lionel Messi, Cristiano Ronaldo, Lewis Hamilton, Max Verstappen, LeBron James, Michael Jordan, Roger Federer, Rafael Nadal, Novak Djokovic, Neeraj Chopra, etc.)
+   - Any sport (Cricket, Football, Basketball, Tennis, Formula 1, Athletics, Badminton, Hockey, Golf, Boxing, Swimming, etc.)
+   - Any sporting tournament, league, World Cup, IPL, Champions League, Grand Prix, Grand Slam, Olympic Games, match, score, record, rule, or tactic
+   IS A 100% VALID SPORTS QUERY.
+
+2. STRICT NON-SPORTS FILTER:
+   Only select 'non_sports' if the question is TOTALLY UNRELATED to sports or sports personalities (e.g., programming/software code, cooking recipes, general politics, stock market/finance, non-sports geography, movies/entertainment with no sports link, general school math).
+
+3. ROUTING DESTINATION:
+   - Select 'wiki_search' for questions about sports personalities, athlete biographies, general sports trivia, tournament overviews, and live sports questions.
+   - Select 'vectorstore' if specifically inquiring about indexed playbook archives or deep statistical documents."""
 
 
 def clean_sports_output(text: str) -> str:
@@ -127,15 +145,19 @@ def build_sports_rag_graph(groq_key: str, model_id: str, temp: float, vector_sto
             if hasattr(route_result, "datasource"):
                 datasource = route_result.datasource
             elif isinstance(route_result, dict):
-                datasource = route_result.get("datasource", "vectorstore")
+                datasource = route_result.get("datasource", "wiki_search")
             else:
                 datasource = str(route_result)
         except Exception:
             # Fallback sports heuristic with strict non-sports rejection
             q_lower = question.lower()
-            if any(k in q_lower for k in SPORTS_KEYWORDS):
-                datasource = "vectorstore"
-            elif any(sk in q_lower for sk in ["who won", "score", "match", "championship", "tournament", "player", "athlete", "cup", "league", "stadium", "medal"]):
+            if any(k in q_lower for k in SPORTS_KEYWORDS) or any(
+                sk in q_lower for sk in [
+                    "who is", "who won", "score", "match", "championship", "tournament",
+                    "player", "athlete", "sportsperson", "cricketer", "footballer",
+                    "cup", "league", "stadium", "medal", "batsman", "bowler", "captain"
+                ]
+            ):
                 datasource = "wiki_search"
             else:
                 datasource = "non_sports"
@@ -143,34 +165,57 @@ def build_sports_rag_graph(groq_key: str, model_id: str, temp: float, vector_sto
 
     def retrieve_vectorstore_node(state: GraphState):
         question = state["question"]
+        docs_text = ""
+        retrieval_success = False
+
         if vector_store is not None:
             try:
                 retriever = vector_store.as_retriever(search_kwargs={"k": 4})
                 retrieved_docs = retriever.invoke(question)
-                docs_text = "\n\n".join([d.page_content for d in retrieved_docs])
+                if retrieved_docs:
+                    valid_chunks = [d.page_content for d in retrieved_docs if d.page_content and len(d.page_content.strip()) > 30]
+                    if valid_chunks:
+                        docs_text = "\n\n".join(valid_chunks)
+                        retrieval_success = True
             except Exception as e:
-                docs_text = f"Sports vectorstore retrieval error: {str(e)}"
-        else:
-            docs_text = "Vector store is not currently populated. Ingest documents in sidebar or use Wikipedia fallback."
-        return {"documents": docs_text}
+                docs_text = f"Sports vectorstore retrieval notice: {str(e)}"
+
+        # Seamless Fallback: If vector store is empty, unpopulated, or yielded no matches, fetch from Wikipedia
+        datasource = state.get("datasource", "vectorstore")
+        if not retrieval_success or not docs_text or len(docs_text.strip()) < 50:
+            try:
+                wiki = get_wikipedia_tool()
+                wiki_result = wiki.invoke(question)
+                if wiki_result and len(str(wiki_result).strip()) > 30:
+                    docs_text = str(wiki_result)
+                    datasource = "wiki_search"
+                else:
+                    docs_text = docs_text or "General Sports Intelligence Engine Context"
+            except Exception:
+                docs_text = docs_text or "General Sports Intelligence Engine Context"
+
+        return {"documents": docs_text, "datasource": datasource}
 
     def wiki_search_node(state: GraphState):
         question = state["question"]
         wiki = get_wikipedia_tool()
         try:
             wiki_result = wiki.invoke(question)
+            docs_text = str(wiki_result)
         except Exception as e:
-            wiki_result = f"Wikipedia sports search error: {str(e)}"
-        return {"documents": str(wiki_result)}
+            docs_text = f"Wikipedia sports search error: {str(e)}"
+        return {"documents": docs_text, "datasource": "wiki_search"}
 
     def reject_non_sports_node(state: GraphState):
         """Strictly reject queries unrelated to sports."""
         rejection_msg = (
             "⚡ **SportPulse AI Policy Notice**\n\n"
-            "I am designed and specialized to answer questions **strictly related to sports only**.\n\n"
-            "Please ask questions related to sports, athletic competitions, tournaments, or athletes "
-            "(such as cricket, football, tennis, Formula 1, basketball, tournament records, player statistics, "
-            "match tactics, or sporting history)."
+            "I am designed and specialized to answer questions **strictly related to sports, athletics, and sports personalities only**.\n\n"
+            "Please ask questions related to:\n"
+            "- **Sports Personalities & Athletes** (e.g. Virat Kohli, MS Dhoni, Lionel Messi, Cristiano Ronaldo, LeBron James, Lewis Hamilton, Roger Federer, etc.)\n"
+            "- **Sports & Competitions** (Cricket, Football, Tennis, Formula 1, Basketball, Olympics, etc.)\n"
+            "- **Matches, Tournaments & Leagues** (World Cups, IPL, Champions League, Grand Slams, etc.)\n"
+            "- **Records, Player Statistics, Match Tactics, & Rules**."
         )
         return {
             "generation": rejection_msg,
@@ -182,16 +227,23 @@ def build_sports_rag_graph(groq_key: str, model_id: str, temp: float, vector_sto
         question = state["question"]
         documents = state["documents"]
 
-        augmented_prompt = f"""You are SportPulse AI — an elite Sports Analyst and Tactical Strategist.
+        augmented_prompt = f"""You are SportPulse AI — an elite Sports Analyst and Tactical Strategist specializing in all sports, tournaments, matches, and sports personalities / athletes (cricketers, footballers, tennis players, racers, basketball players, Olympic champions, etc.).
 
 CRITICAL POLICY & STYLE MANDATES:
-1. SPORTS-ONLY CRITERIA: You are strictly forbidden from answering questions unrelated to sports. If the question or context is not about sports, athletes, tournaments, or games, decline to answer and state: "I am programmed to answer questions related to sports only. Please ask a sports-related question."
-2. Present your breakdown in CRISP, CLEAN BULLET POINTS (`- `) grouped under topical section headers (e.g., `### 🏏 Debut & Career Overview`, `### 🏆 Major Trophies & Titles`, `### 📊 Statistical Milestones`, `### 🎯 Tactical Analysis`).
-3. MANDATORY: NEVER use `<br>` tags or HTML tags anywhere.
-4. DO NOT output dense markdown tables where cells have multiple items. Instead, use clear, readable bullet lists.
-5. Keep each bullet point punchy, concise, and highlight key records, numbers, and dates in **bold**.
-6. Answer strictly using ONLY the provided sports context. Do not invent outside facts.
-7. If the context does not contain enough data, state: "The current sports context does not have sufficient data to answer this conclusively."
+1. SPORTS & SPORTSPERSON SCOPE:
+   - You answer questions related to sports, athletic games, tournaments, and any sports personality or athlete (e.g., Virat Kohli, Rohit Sharma, MS Dhoni, Messi, Ronaldo, LeBron, Hamilton, Federer, etc.).
+   - Provide a comprehensive, authoritative, high-energy breakdown detailing their sport, role, career milestones, iconic records, championships, and tactical legacy.
+2. SYNTHESIS & FACTUAL ACCURACY:
+   - Use the retrieved sports context below along with your authoritative sports intelligence to give a full, detailed answer.
+   - Do NOT give empty refusals or say "insufficient data" when asked about famous athletes, players, or sports events. Always provide the complete tactical and career breakdown.
+3. STRICT NON-SPORTS REFUSAL:
+   - If the user question is strictly unrelated to sports or sports personalities (e.g. writing python code, cooking recipes, general non-sports politics), decline politely by stating: "I am programmed to answer questions related to sports and sports personalities only. Please ask a sports-related question."
+4. STRUCTURE & FORMATTING:
+   - Group information under topical markdown headers (e.g., `### 🏏 Career Overview & Identity`, `### 🏆 Major Trophies & Milestones`, `### 📊 Key Statistics & Records`, `### 🎯 Playing Style & Tactical Mastery`).
+   - Format information in CRISP, CLEAN BULLET POINTS (`- `).
+   - Highlight key statistics, dates, and names in **bold**.
+   - NEVER use `<br>` tags or HTML tags anywhere.
+   - DO NOT output messy markdown tables.
 
 ### Sports Context / Playbook:
 {documents}
@@ -233,3 +285,4 @@ CRITICAL POLICY & STYLE MANDATES:
     workflow.add_edge("generate", END)
 
     return workflow.compile()
+
